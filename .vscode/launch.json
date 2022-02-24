@@ -1,0 +1,22 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "type": "lldb",
+            "request": "launch",
+            "name": "Debug executable",
+            "cargo": {
+                "args": [
+                    "build",
+                    "--bin=google_hashcode_2022_qualification",
+                    "--package=google_hashcode_2022_qualification",
+                    "--manifest-path=Cargo.toml"
+                ],
+                "filter": {
+                    "kind": "bin"
+                }
+            },
+            "args": []
+        }
+    ]
+}

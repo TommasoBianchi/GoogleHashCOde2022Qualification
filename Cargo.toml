@@ -1,0 +1,7 @@
+[package]
+name = "google_hashcode_2022_qualification"
+version = "0.1.0"
+authors = ["Tommaso Bianchi <tommaso.bianchi95@gmail.com>"]
+
+[dependencies]
+rand = "0.8.4"
