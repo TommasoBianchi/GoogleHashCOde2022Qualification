@@ -1,7 +1,7 @@
 use std::collections::{HashMap, HashSet};
 
 use crate::{
-    parse_input::{InputData, Project, Role},
+    parse_input::{Contributor, InputData, Project, Role},
     solution::{ExecutedProject, Solution},
 };
 
@@ -16,6 +16,8 @@ pub fn solve(input: &InputData) -> Result<Solution, SolveError> {
     let mut current_time = 0_u16;
     let mut executed_projects = vec![];
 
+    let mut current_contributors: Vec<Contributor> = input.contributors.to_vec();
+
     let mut best_project_id_option =
         find_best_project(input, current_time, &available_projects_ids);
 
@@ -25,8 +27,19 @@ pub fn solve(input: &InputData) -> Result<Solution, SolveError> {
         let best_project = &input.projects[best_project_id];
 
         // Assign contributors to the project
-        let contributors_option =
-            assign_contributors(input, best_project, &mut available_contributors_ids);
+        let contributors_option = assign_contributors(
+            &current_contributors,
+            best_project,
+            &mut available_contributors_ids,
+        );
+
+        if contributors_option.is_none() && contributors_ids_to_freeup_time.is_empty() {
+            // NOTE: this is temporary
+            available_projects_ids.remove(&best_project_id);
+            best_project_id_option =
+                find_best_project(input, current_time, &available_projects_ids);
+            continue;
+        }
 
         if contributors_option.is_none() {
             // TODO: go to second best project instead of bailing out
@@ -47,10 +60,11 @@ pub fn solve(input: &InputData) -> Result<Solution, SolveError> {
 
         let contributors_ids = contributors_option.unwrap();
 
-        // Store freeup time for each contributor
+        // Store freeup time and increase skills for each contributor
         for contributor_id in contributors_ids.iter() {
             contributors_ids_to_freeup_time
                 .insert(*contributor_id, current_time + best_project.duration);
+            // TODO: increase skills for contributors (based on the skill they contributed for)
         }
 
         // Save results
@@ -83,7 +97,7 @@ pub fn solve(input: &InputData) -> Result<Solution, SolveError> {
 }
 
 fn assign_contributors(
-    input: &InputData,
+    contributors: &[Contributor],
     project: &Project,
     available_contributors_ids: &mut HashSet<usize>,
 ) -> Option<Vec<usize>> {
@@ -91,7 +105,7 @@ fn assign_contributors(
 
     // TODO: sort roles (either in order of required skill level or randomly)
     for role in project.roles.iter() {
-        match find_best_contributor(input, role, available_contributors_ids) {
+        match find_best_contributor(contributors, role, available_contributors_ids) {
             Some(contributor_id) => {
                 available_contributors_ids.remove(&contributor_id);
                 assigned_contributors.push(contributor_id);
@@ -104,7 +118,7 @@ fn assign_contributors(
 }
 
 fn find_best_contributor(
-    input: &InputData,
+    contributors: &[Contributor],
     role: &Role,
     available_contributors_ids: &HashSet<usize>,
 ) -> Option<usize> {
@@ -116,7 +130,7 @@ fn find_best_contributor(
     let mut best_contributor_loss = u8::MAX;
 
     for contributor_id in available_contributors_ids.iter() {
-        let contributor = &input.contributors[*contributor_id];
+        let contributor = &contributors[*contributor_id];
         match contributor.skills.get(&role.skill_id) {
             None => {}
             Some(skill_level) => {

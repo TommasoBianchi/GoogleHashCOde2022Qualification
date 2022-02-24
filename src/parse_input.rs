@@ -90,7 +90,7 @@ pub struct InputData {
     pub projects: Vec<Project>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Contributor {
     pub name: String,
     pub skills: HashMap<usize, u8>,
