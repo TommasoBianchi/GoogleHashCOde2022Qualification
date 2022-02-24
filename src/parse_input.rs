@@ -24,7 +24,7 @@ pub fn parse_input<TRead: Read>(reader: &mut TRead) -> Result<InputData, ParseEr
         let contributor_split_first_line = lines.next().unwrap().split(' ').collect::<Vec<_>>();
         let name = contributor_split_first_line[0];
         let num_skills = contributor_split_first_line[1].parse::<usize>()?;
-        let mut skills = vec![];
+        let mut skills = HashMap::new();
 
         for _ in 0..num_skills {
             let contributor_skill_split_first_line =
@@ -37,10 +37,7 @@ pub fn parse_input<TRead: Read>(reader: &mut TRead) -> Result<InputData, ParseEr
                 .entry(skill_name)
                 .or_insert(new_skill_id);
 
-            skills.push(Skill {
-                id: *skill_id,
-                level: skill_level,
-            });
+            skills.insert(*skill_id, skill_level);
         }
 
         contributors.push(Contributor {
@@ -94,15 +91,9 @@ pub struct InputData {
 }
 
 #[derive(Debug)]
-pub struct Skill {
-    pub id: usize,
-    pub level: u8,
-}
-
-#[derive(Debug)]
 pub struct Contributor {
     pub name: String,
-    pub skills: Vec<Skill>,
+    pub skills: HashMap<usize, u8>,
 }
 
 #[derive(Debug)]
