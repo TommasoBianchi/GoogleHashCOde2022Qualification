@@ -26,6 +26,8 @@ pub fn solve(input: &InputData) -> Result<Solution, SolveError> {
         let sorted_projects =
             sort_projects(input, current_time, available_projects_ids.iter().cloned());
 
+        let mut assigned_projects = 0;
+
         for project_id in sorted_projects {
             let project = &input.projects[project_id];
 
@@ -66,6 +68,8 @@ pub fn solve(input: &InputData) -> Result<Solution, SolveError> {
                 }
             }
 
+            assigned_projects += 1;
+
             // Save results
             executed_projects.push(ExecutedProject {
                 project,
@@ -82,6 +86,14 @@ pub fn solve(input: &InputData) -> Result<Solution, SolveError> {
         }
 
         current_time = next_current_time.max(current_time + 1);
+
+        println!(
+            "Assigned projects = {} this round, {} total; next time = {}; remaining projects = {}",
+            assigned_projects,
+            executed_projects.len(),
+            current_time,
+            available_projects_ids.len()
+        );
 
         // Free up contributors
         let contributors_ids_to_free = contributors_ids_to_freeup_time
