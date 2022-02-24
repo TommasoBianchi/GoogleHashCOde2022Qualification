@@ -12,8 +12,8 @@ pub fn solve(input: &InputData) -> Result<Solution, SolveError> {
         (0..input.projects.len()).into_iter().collect();
     let mut available_contributors_ids: HashSet<usize> =
         (0..input.contributors.len()).into_iter().collect();
-    let mut contributors_ids_to_freeup_time: HashMap<usize, u16> = HashMap::new();
-    let mut current_time = 0_u16;
+    let mut contributors_ids_to_freeup_time: HashMap<usize, u32> = HashMap::new();
+    let mut current_time = 0_u32;
     let mut executed_projects = vec![];
 
     let mut current_contributors: Vec<Contributor> = input.contributors.to_vec();
@@ -156,7 +156,7 @@ fn find_best_contributor(
 
 fn find_best_project(
     input: &InputData,
-    current_time: u16,
+    current_time: u32,
     available_projects_ids: &HashSet<usize>,
 ) -> Option<usize> {
     if available_projects_ids.is_empty() {
@@ -178,11 +178,11 @@ fn find_best_project(
     Some(current_best)
 }
 
-fn score_project(current_time: u16, project: &Project) -> f32 {
+fn score_project(current_time: u32, project: &Project) -> f32 {
     let extra_time = current_time as i32 + project.duration as i32 - project.best_before as i32;
     let score = if extra_time <= 0 {
         project.score as f32
-    } else if extra_time as u16 >= project.duration {
+    } else if extra_time as u32 >= project.duration {
         0.0
     } else {
         project.score as f32 - extra_time as f32

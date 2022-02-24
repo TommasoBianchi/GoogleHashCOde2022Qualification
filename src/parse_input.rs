@@ -49,9 +49,9 @@ pub fn parse_input<TRead: Read>(reader: &mut TRead) -> Result<InputData, ParseEr
     for _ in 0..num_projects {
         let project_split_first_line = lines.next().unwrap().split(' ').collect::<Vec<_>>();
         let name = project_split_first_line[0];
-        let duration = project_split_first_line[1].parse::<u16>()?;
-        let score = project_split_first_line[2].parse::<u16>()?;
-        let best_before = project_split_first_line[3].parse::<u16>()?;
+        let duration = project_split_first_line[1].parse::<u32>()?;
+        let score = project_split_first_line[2].parse::<u32>()?;
+        let best_before = project_split_first_line[3].parse::<u32>()?;
         let num_roles = project_split_first_line[4].parse::<u8>()?;
         let mut roles = vec![];
 
@@ -99,9 +99,9 @@ pub struct Contributor {
 #[derive(Debug)]
 pub struct Project {
     pub name: String,
-    pub duration: u16,
-    pub score: u16,
-    pub best_before: u16,
+    pub duration: u32,
+    pub score: u32,
+    pub best_before: u32,
     pub roles: Vec<Role>,
 }
 
