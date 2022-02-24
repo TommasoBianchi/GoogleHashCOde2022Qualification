@@ -33,6 +33,9 @@ impl<'a> Display for Solution<'a> {
 
 impl<'a> Debug for Solution<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        todo!()
+        f.write_fmt(format_args!(
+            "Executed projects = {}",
+            self.executed_projects.len()
+        ))
     }
 }
