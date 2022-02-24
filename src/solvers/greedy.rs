@@ -18,9 +18,6 @@ pub fn solve(input: &InputData) -> Result<Solution, SolveError> {
 
     let mut current_contributors: Vec<Contributor> = input.contributors.to_vec();
 
-    let mut best_project_id_option =
-        find_best_project(input, current_time, &available_projects_ids);
-
     while !available_projects_ids.is_empty() {
         println!("Remaining projects = {}", available_projects_ids.len());
 
