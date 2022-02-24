@@ -32,11 +32,8 @@ pub fn solve(input: &InputData) -> Result<Solution, SolveError> {
             let project = &input.projects[project_id];
 
             // Assign contributors to the project
-            let contributors_option = assign_contributors(
-                &current_contributors,
-                project,
-                &mut available_contributors_ids,
-            );
+            let contributors_option =
+                assign_contributors(&current_contributors, project, &available_contributors_ids);
 
             if contributors_option.is_none() {
                 continue;
@@ -51,11 +48,13 @@ pub fn solve(input: &InputData) -> Result<Solution, SolveError> {
 
             let contributors_ids = contributors_option.unwrap();
 
-            // Store freeup time and increase skills for each contributor
+            // Set contributors as no longer available, store freeup time and increase skills for each contributor
             for contributor_data in contributors_ids.iter() {
                 let contributor_id = contributor_data.0;
                 let skill_id = contributor_data.1;
                 let required_skill_level = contributor_data.2;
+
+                available_contributors_ids.remove(&contributor_id);
 
                 contributors_ids_to_freeup_time
                     .insert(contributor_id, current_time + project.duration);
@@ -122,15 +121,21 @@ pub fn solve(input: &InputData) -> Result<Solution, SolveError> {
 fn assign_contributors(
     contributors: &[Contributor],
     project: &Project,
-    available_contributors_ids: &mut HashSet<usize>,
+    available_contributors_ids: &HashSet<usize>,
 ) -> Option<Vec<(usize, usize, u8)>> {
+    let mut unavailable_contributors = HashSet::new();
     let mut assigned_contributors = vec![];
 
     // TODO: sort roles (either in order of required skill level or randomly)
     for role in project.roles.iter() {
-        match find_best_contributor(contributors, role, available_contributors_ids) {
+        match find_best_contributor(
+            contributors,
+            role,
+            available_contributors_ids,
+            &unavailable_contributors,
+        ) {
             Some(contributor_data) => {
-                available_contributors_ids.remove(&contributor_data.0);
+                unavailable_contributors.insert(contributor_data.0);
                 assigned_contributors.push(contributor_data);
             }
             None => return None,
@@ -144,6 +149,7 @@ fn find_best_contributor(
     contributors: &[Contributor],
     role: &Role,
     available_contributors_ids: &HashSet<usize>,
+    contributors_ids_blacklist: &HashSet<usize>,
 ) -> Option<(usize, usize, u8)> {
     if available_contributors_ids.is_empty() {
         return None;
@@ -153,6 +159,10 @@ fn find_best_contributor(
     let mut best_contributor_loss = u8::MAX;
 
     for contributor_id in available_contributors_ids.iter() {
+        if contributors_ids_blacklist.contains(contributor_id) {
+            continue;
+        }
+
         let contributor = &contributors[*contributor_id];
         match contributor.skills.get(&role.skill_id) {
             None => {}
