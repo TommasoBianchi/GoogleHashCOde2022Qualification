@@ -22,65 +22,63 @@ pub fn solve(input: &InputData) -> Result<Solution, SolveError> {
         find_best_project(input, current_time, &available_projects_ids);
 
     while !available_projects_ids.is_empty() {
-        // Find best project
-        let best_project_id = best_project_id_option.unwrap();
-        let best_project = &input.projects[best_project_id];
+        println!("Remaining projects = {}", available_projects_ids.len());
 
-        // Assign contributors to the project
-        let contributors_option = assign_contributors(
-            &current_contributors,
-            best_project,
-            &mut available_contributors_ids,
-        );
+        // Sort projects by score
+        let sorted_projects =
+            sort_projects(input, current_time, available_projects_ids.iter().cloned());
 
-        if contributors_option.is_none() && contributors_ids_to_freeup_time.is_empty() {
-            // NOTE: this is temporary
-            available_projects_ids.remove(&best_project_id);
-            best_project_id_option =
-                find_best_project(input, current_time, &available_projects_ids);
-            continue;
-        }
+        for project_id in sorted_projects {
+            let project = &input.projects[project_id];
 
-        if contributors_option.is_none() {
-            // TODO: go to second best project instead of bailing out
-            current_time += 1; // TODO: optimize by advancing "enough"
-                               // Free up contributors
-            let contributors_ids_to_free = contributors_ids_to_freeup_time
-                .iter()
-                .filter(|entry| *entry.1 == current_time)
-                .map(|entry| entry.0)
-                .cloned()
-                .collect::<Vec<_>>();
-            for contributor_id in contributors_ids_to_free.iter() {
-                contributors_ids_to_freeup_time.remove(contributor_id);
-                available_contributors_ids.insert(*contributor_id);
+            // Assign contributors to the project
+            let contributors_option = assign_contributors(
+                &current_contributors,
+                project,
+                &mut available_contributors_ids,
+            );
+
+            if contributors_option.is_none() {
+                continue;
             }
-            continue;
+
+            let contributors_ids = contributors_option.unwrap();
+
+            // Store freeup time and increase skills for each contributor
+            for contributor_data in contributors_ids.iter() {
+                contributors_ids_to_freeup_time
+                    .insert(contributor_data.0, current_time + project.duration);
+                // TODO: increase skills for contributors (based on the skill they contributed for)
+            }
+
+            // Save results
+            executed_projects.push(ExecutedProject {
+                project,
+                contributors: contributors_ids
+                    .iter()
+                    .map(|contributor_data| &input.contributors[contributor_data.0])
+                    .collect(),
+            });
+
+            // Delete best project from available ones
+            available_projects_ids.remove(&project_id);
+
+            // TODO: consider mentoring (skills level up)
         }
 
-        let contributors_ids = contributors_option.unwrap();
+        current_time += 1; // TODO: optimize by advancing "enough"
 
-        // Store freeup time and increase skills for each contributor
-        for contributor_id in contributors_ids.iter() {
-            contributors_ids_to_freeup_time
-                .insert(*contributor_id, current_time + best_project.duration);
-            // TODO: increase skills for contributors (based on the skill they contributed for)
+        // Free up contributors
+        let contributors_ids_to_free = contributors_ids_to_freeup_time
+            .iter()
+            .filter(|entry| *entry.1 == current_time)
+            .map(|entry| entry.0)
+            .cloned()
+            .collect::<Vec<_>>();
+        for contributor_id in contributors_ids_to_free.iter() {
+            contributors_ids_to_freeup_time.remove(contributor_id);
+            available_contributors_ids.insert(*contributor_id);
         }
-
-        // Save results
-        executed_projects.push(ExecutedProject {
-            project: best_project,
-            contributors: contributors_ids
-                .iter()
-                .map(|contributor_id| &input.contributors[*contributor_id])
-                .collect(),
-        });
-
-        // Delete best project from available ones
-        available_projects_ids.remove(&best_project_id);
-
-        // Find next best project
-        best_project_id_option = find_best_project(input, current_time, &available_projects_ids);
 
         // Cleanup projects no longer doable
         for project_id in available_projects_ids.iter().cloned().collect::<Vec<_>>() {
@@ -89,8 +87,6 @@ pub fn solve(input: &InputData) -> Result<Solution, SolveError> {
                 available_projects_ids.remove(&project_id);
             }
         }
-
-        // TODO: consider mentoring (skills level up)
     }
 
     Ok(Solution { executed_projects })
@@ -100,15 +96,15 @@ fn assign_contributors(
     contributors: &[Contributor],
     project: &Project,
     available_contributors_ids: &mut HashSet<usize>,
-) -> Option<Vec<usize>> {
+) -> Option<Vec<(usize, usize)>> {
     let mut assigned_contributors = vec![];
 
     // TODO: sort roles (either in order of required skill level or randomly)
     for role in project.roles.iter() {
         match find_best_contributor(contributors, role, available_contributors_ids) {
-            Some(contributor_id) => {
-                available_contributors_ids.remove(&contributor_id);
-                assigned_contributors.push(contributor_id);
+            Some(contributor_data) => {
+                available_contributors_ids.remove(&contributor_data.0);
+                assigned_contributors.push(contributor_data);
             }
             None => return None,
         }
@@ -121,12 +117,12 @@ fn find_best_contributor(
     contributors: &[Contributor],
     role: &Role,
     available_contributors_ids: &HashSet<usize>,
-) -> Option<usize> {
+) -> Option<(usize, usize)> {
     if available_contributors_ids.is_empty() {
         return None;
     }
 
-    let mut best_contributor_id = None;
+    let mut best_contributor_data = None;
     let mut best_contributor_loss = u8::MAX;
 
     for contributor_id in available_contributors_ids.iter() {
@@ -140,7 +136,7 @@ fn find_best_contributor(
 
                     if loss < best_contributor_loss {
                         best_contributor_loss = loss;
-                        best_contributor_id = Some(*contributor_id);
+                        best_contributor_data = Some((*contributor_id, role.skill_id));
                     }
 
                     if loss == 0 {
@@ -151,7 +147,29 @@ fn find_best_contributor(
         }
     }
 
-    best_contributor_id
+    best_contributor_data
+}
+
+fn sort_projects<TIter: Iterator<Item = usize>>(
+    input: &InputData,
+    current_time: u32,
+    project_ids: TIter,
+) -> Vec<usize> {
+    let mut sorted_result = project_ids
+        .map(|project_id| {
+            (
+                project_id,
+                score_project(current_time, &input.projects[project_id]),
+            )
+        })
+        .collect::<Vec<_>>();
+
+    sorted_result.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
+
+    sorted_result
+        .iter()
+        .map(|entry| entry.0)
+        .collect::<Vec<_>>()
 }
 
 fn find_best_project(
