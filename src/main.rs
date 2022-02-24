@@ -16,7 +16,7 @@ mod solvers;
 
 fn main() {
     let input_dir = "input_data/";
-    let submissions_dir = "submissions/1/";
+    let submissions_dir = "submissions/2/";
     let print_solution_mode = &PrintSolutionMode::Debug; // TODO: read from commandline options
 
     let paths = read_dir(input_dir).unwrap();
