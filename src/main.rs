@@ -30,7 +30,7 @@ fn main() {
         }
 
         let input = parse_input(&mut File::open(input_dir.to_owned() + filename).unwrap()).unwrap();
-        let solution = greedy::solve(&input, filename.into()).unwrap();
+        let solution = greedy::solve(&input, filename.into(), 20).unwrap();
         print_solution(&input, &solution, print_solution_mode);
 
         File::create(submissions_dir.to_owned() + filename)

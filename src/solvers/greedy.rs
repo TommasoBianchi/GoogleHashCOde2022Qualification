@@ -7,7 +7,11 @@ use crate::{
 
 use super::errors::SolveError;
 
-pub fn solve(input: &InputData, dataset_name: String) -> Result<Solution, SolveError> {
+pub fn solve(
+    input: &InputData,
+    dataset_name: String,
+    max_rounds_without_improvements: u32,
+) -> Result<Solution, SolveError> {
     let mut available_projects_ids: HashSet<usize> =
         (0..input.projects.len()).into_iter().collect();
     let mut available_contributors_ids: HashSet<usize> =
@@ -15,6 +19,8 @@ pub fn solve(input: &InputData, dataset_name: String) -> Result<Solution, SolveE
     let mut contributors_ids_to_freeup_time: HashMap<usize, u32> = HashMap::new();
     let mut current_time = 0_u32;
     let mut next_current_time = 0_u32;
+    let mut rounds_without_improvements = 0_u32;
+
     let mut executed_projects = vec![];
 
     let mut current_contributors: Vec<Contributor> = input.contributors.to_vec();
@@ -86,6 +92,12 @@ pub fn solve(input: &InputData, dataset_name: String) -> Result<Solution, SolveE
 
         current_time = next_current_time.max(current_time + 1);
 
+        if assigned_projects > 0 {
+            rounds_without_improvements = 0;
+        } else {
+            rounds_without_improvements += 1;
+        }
+
         println!(
             "[{}] Assigned projects = {} this round, {} total; next time = {}; remaining projects = {}",
             dataset_name,
@@ -94,6 +106,14 @@ pub fn solve(input: &InputData, dataset_name: String) -> Result<Solution, SolveE
             current_time,
             available_projects_ids.len()
         );
+
+        if rounds_without_improvements > max_rounds_without_improvements {
+            println!(
+                "[{}] Reached max rounds without improvements ({}), exiting.",
+                dataset_name, max_rounds_without_improvements
+            );
+            break;
+        }
 
         // Free up contributors
         let contributors_ids_to_free = contributors_ids_to_freeup_time
