@@ -46,9 +46,19 @@ pub fn solve(input: &InputData) -> Result<Solution, SolveError> {
 
             // Store freeup time and increase skills for each contributor
             for contributor_data in contributors_ids.iter() {
+                let contributor_id = contributor_data.0;
+                let skill_id = contributor_data.1;
+                let required_skill_level = contributor_data.2;
+
                 contributors_ids_to_freeup_time
-                    .insert(contributor_data.0, current_time + project.duration);
-                // TODO: increase skills for contributors (based on the skill they contributed for)
+                    .insert(contributor_id, current_time + project.duration);
+
+                // Increase skill level for contributors (based on the skill they contributed for)
+                let skills = &mut current_contributors[contributor_id].skills;
+                let current_skill_level = skills.get_mut(&skill_id).unwrap();
+                if required_skill_level <= *current_skill_level {
+                    *current_skill_level += 1;
+                }
             }
 
             // Save results
@@ -96,7 +106,7 @@ fn assign_contributors(
     contributors: &[Contributor],
     project: &Project,
     available_contributors_ids: &mut HashSet<usize>,
-) -> Option<Vec<(usize, usize)>> {
+) -> Option<Vec<(usize, usize, u8)>> {
     let mut assigned_contributors = vec![];
 
     // TODO: sort roles (either in order of required skill level or randomly)
@@ -117,7 +127,7 @@ fn find_best_contributor(
     contributors: &[Contributor],
     role: &Role,
     available_contributors_ids: &HashSet<usize>,
-) -> Option<(usize, usize)> {
+) -> Option<(usize, usize, u8)> {
     if available_contributors_ids.is_empty() {
         return None;
     }
@@ -136,7 +146,8 @@ fn find_best_contributor(
 
                     if loss < best_contributor_loss {
                         best_contributor_loss = loss;
-                        best_contributor_data = Some((*contributor_id, role.skill_id));
+                        best_contributor_data =
+                            Some((*contributor_id, role.skill_id, role.required_skill_level));
                     }
 
                     if loss == 0 {
