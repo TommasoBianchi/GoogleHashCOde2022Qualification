@@ -14,6 +14,7 @@ pub fn solve(input: &InputData) -> Result<Solution, SolveError> {
         (0..input.contributors.len()).into_iter().collect();
     let mut contributors_ids_to_freeup_time: HashMap<usize, u32> = HashMap::new();
     let mut current_time = 0_u32;
+    let mut next_current_time = 0_u32;
     let mut executed_projects = vec![];
 
     let mut current_contributors: Vec<Contributor> = input.contributors.to_vec();
@@ -37,6 +38,13 @@ pub fn solve(input: &InputData) -> Result<Solution, SolveError> {
 
             if contributors_option.is_none() {
                 continue;
+            }
+
+            // Update next current time
+            if next_current_time == current_time {
+                next_current_time += project.duration;
+            } else {
+                next_current_time = next_current_time.min(current_time + project.duration);
             }
 
             let contributors_ids = contributors_option.unwrap();
@@ -73,12 +81,12 @@ pub fn solve(input: &InputData) -> Result<Solution, SolveError> {
             // TODO: consider mentoring (skills level up)
         }
 
-        current_time += 1; // TODO: optimize by advancing "enough"
+        current_time = next_current_time.max(current_time + 1);
 
         // Free up contributors
         let contributors_ids_to_free = contributors_ids_to_freeup_time
             .iter()
-            .filter(|entry| *entry.1 == current_time)
+            .filter(|entry| *entry.1 >= current_time)
             .map(|entry| entry.0)
             .cloned()
             .collect::<Vec<_>>();
