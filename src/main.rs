@@ -2,7 +2,8 @@ use std::fs::{read_dir, File};
 
 use parse_input::{parse_input, InputData};
 use solution::Solution;
-use solvers::example;
+
+use crate::solvers::greedy;
 extern crate rand;
 
 mod parse_input;
@@ -13,7 +14,7 @@ mod solvers;
 fn main() {
     let input_dir = "input_data/";
     let submissions_dir = "submissions/1/";
-    let print_solution_mode = &PrintSolutionMode::Debug; // TODO: read from commandline options
+    let print_solution_mode = &PrintSolutionMode::Submission; // TODO: read from commandline options
 
     let paths = read_dir(input_dir).unwrap();
 
@@ -25,7 +26,7 @@ fn main() {
         }
 
         let input = parse_input(&mut File::open(filename).unwrap()).unwrap();
-        let solution = example::solve(&input).unwrap();
+        let solution = greedy::solve(&input).unwrap();
         print_solution(&input, &solution, print_solution_mode);
     }
 }
