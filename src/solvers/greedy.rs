@@ -73,7 +73,7 @@ pub fn solve(
                         skills.insert(skill_id, 1);
                     }
                     Some(current_skill_level) => {
-                        if required_skill_level <= *current_skill_level {
+                        if required_skill_level >= *current_skill_level {
                             *current_skill_level += 1;
                         }
                     }
