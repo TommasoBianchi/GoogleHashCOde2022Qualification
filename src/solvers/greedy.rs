@@ -125,6 +125,7 @@ fn assign_contributors(
 ) -> Option<Vec<(usize, usize, u8)>> {
     let mut unavailable_contributors = HashSet::new();
     let mut assigned_contributors = vec![];
+    let mut selected_contributors_skillset = HashMap::new();
 
     // TODO: sort roles (either in order of required skill level or randomly)
     for role in project.roles.iter() {
@@ -133,10 +134,20 @@ fn assign_contributors(
             role,
             available_contributors_ids,
             &unavailable_contributors,
+            &selected_contributors_skillset,
         ) {
             Some(contributor_data) => {
                 unavailable_contributors.insert(contributor_data.0);
                 assigned_contributors.push(contributor_data);
+
+                for skill in contributors[contributor_data.0].skills.iter() {
+                    match selected_contributors_skillset.get_mut(skill.0) {
+                        None => {
+                            selected_contributors_skillset.insert(*skill.0, *skill.1);
+                        }
+                        Some(v) => *v = *skill.1.max(v),
+                    }
+                }
             }
             None => return None,
         }
@@ -150,6 +161,7 @@ fn find_best_contributor(
     role: &Role,
     available_contributors_ids: &HashSet<usize>,
     contributors_ids_blacklist: &HashSet<usize>,
+    selected_contributors_skillset: &HashMap<usize, u8>,
 ) -> Option<(usize, usize, u8)> {
     if available_contributors_ids.is_empty() {
         return None;
@@ -167,9 +179,13 @@ fn find_best_contributor(
         match contributor.skills.get(&role.skill_id) {
             None => {}
             Some(skill_level) => {
-                // TODO: consider also contributors that can be mentored
-                if *skill_level >= role.required_skill_level {
-                    let loss = role.required_skill_level.wrapping_sub(*skill_level);
+                let can_be_mentored = selected_contributors_skillset
+                    .get(&role.skill_id)
+                    .unwrap_or(&0)
+                    >= &role.required_skill_level
+                    && *skill_level == role.required_skill_level - 1;
+                if can_be_mentored || *skill_level >= role.required_skill_level {
+                    let loss = (skill_level + 1).wrapping_sub(role.required_skill_level);
 
                     if loss < best_contributor_loss {
                         best_contributor_loss = loss;
