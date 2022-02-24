@@ -67,9 +67,16 @@ pub fn solve(
 
                 // Increase skill level for contributors (based on the skill they contributed for)
                 let skills = &mut current_contributors[contributor_id].skills;
-                let current_skill_level = skills.get_mut(&skill_id).unwrap();
-                if required_skill_level <= *current_skill_level {
-                    *current_skill_level += 1;
+
+                match skills.get_mut(&skill_id) {
+                    None => {
+                        skills.insert(skill_id, 1);
+                    }
+                    Some(current_skill_level) => {
+                        if required_skill_level <= *current_skill_level {
+                            *current_skill_level += 1;
+                        }
+                    }
                 }
             }
 
@@ -86,8 +93,6 @@ pub fn solve(
 
             // Delete best project from available ones
             available_projects_ids.remove(&project_id);
-
-            // TODO: consider mentoring (skills level up)
         }
 
         current_time = next_current_time.max(current_time + 1);
@@ -197,27 +202,24 @@ fn find_best_contributor(
         }
 
         let contributor = &contributors[*contributor_id];
-        match contributor.skills.get(&role.skill_id) {
-            None => {}
-            Some(skill_level) => {
-                let can_be_mentored = selected_contributors_skillset
-                    .get(&role.skill_id)
-                    .unwrap_or(&0)
-                    >= &role.required_skill_level
-                    && *skill_level == role.required_skill_level - 1;
-                if can_be_mentored || *skill_level >= role.required_skill_level {
-                    let loss = (skill_level + 1).wrapping_sub(role.required_skill_level);
+        let skill_level = contributor.skills.get(&role.skill_id).unwrap_or(&0);
 
-                    if loss < best_contributor_loss {
-                        best_contributor_loss = loss;
-                        best_contributor_data =
-                            Some((*contributor_id, role.skill_id, role.required_skill_level));
-                    }
+        let can_be_mentored = selected_contributors_skillset
+            .get(&role.skill_id)
+            .unwrap_or(&0)
+            >= &role.required_skill_level
+            && *skill_level == role.required_skill_level - 1;
+        if can_be_mentored || *skill_level >= role.required_skill_level {
+            let loss = (skill_level + 1).wrapping_sub(role.required_skill_level);
 
-                    if loss == 0 {
-                        break;
-                    }
-                }
+            if loss < best_contributor_loss {
+                best_contributor_loss = loss;
+                best_contributor_data =
+                    Some((*contributor_id, role.skill_id, role.required_skill_level));
+            }
+
+            if loss == 0 {
+                break;
             }
         }
     }
