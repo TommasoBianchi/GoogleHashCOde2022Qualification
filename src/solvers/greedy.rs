@@ -7,7 +7,7 @@ use crate::{
 
 use super::errors::SolveError;
 
-pub fn solve(input: &InputData) -> Result<Solution, SolveError> {
+pub fn solve(input: &InputData, dataset_name: String) -> Result<Solution, SolveError> {
     let mut available_projects_ids: HashSet<usize> =
         (0..input.projects.len()).into_iter().collect();
     let mut available_contributors_ids: HashSet<usize> =
@@ -87,7 +87,8 @@ pub fn solve(input: &InputData) -> Result<Solution, SolveError> {
         current_time = next_current_time.max(current_time + 1);
 
         println!(
-            "Assigned projects = {} this round, {} total; next time = {}; remaining projects = {}",
+            "[{}] Assigned projects = {} this round, {} total; next time = {}; remaining projects = {}",
+            dataset_name,
             assigned_projects,
             executed_projects.len(),
             current_time,
