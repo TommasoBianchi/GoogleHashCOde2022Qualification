@@ -1,4 +1,10 @@
-use std::{collections::HashMap, fs::File, io::Write};
+use std::{
+    collections::HashMap,
+    fs::File,
+    io::Write,
+    sync::{Arc, Mutex},
+    thread,
+};
 
 use parse_input::parse_input;
 
@@ -22,22 +28,43 @@ fn main() {
     ];
     let submissions_dir = "submissions/5/";
 
-    let mut all_solution_estimated_scores = HashMap::new();
+    // NOTE: solution adapted from https://stackoverflow.com/a/50283931
+    let all_solution_estimated_scores = Arc::new(Mutex::new(HashMap::new()));
 
-    for filename in input_filenames {
-        println!("Input file = {}", filename);
+    #[allow(clippy::needless_collect)]
+    let handles = input_filenames
+        .iter()
+        .cloned()
+        .map(|filename| {
+            let all_solution_estimated_scores = all_solution_estimated_scores.clone();
+            thread::spawn(move || {
+                println!("Input file = {}", filename);
 
-        let input = parse_input(&mut File::open(input_dir.to_owned() + filename).unwrap()).unwrap();
-        let solution = greedy::solve(&input, filename.into(), 20).unwrap();
-        println!("{:?}", solution);
+                let input =
+                    parse_input(&mut File::open(input_dir.to_owned() + filename).unwrap()).unwrap();
+                let solution = greedy::solve(&input, filename.into(), 20).unwrap();
+                println!("{:?}", solution);
 
-        File::create(submissions_dir.to_owned() + filename)
-            .unwrap()
-            .write_fmt(format_args!("{}", solution))
-            .unwrap();
+                File::create(submissions_dir.to_owned() + filename)
+                    .unwrap()
+                    .write_fmt(format_args!("{}", solution))
+                    .unwrap();
 
-        all_solution_estimated_scores.insert(filename, solution.estimated_score);
-    }
+                all_solution_estimated_scores
+                    .lock()
+                    .unwrap()
+                    .insert(filename, solution.estimated_score);
+            })
+        })
+        // NOTE: this is needed since the `map` operator is lazy (thus will not actually spawn the threads unless consumed)
+        .collect::<Vec<_>>();
+
+    handles
+        .into_iter()
+        .map(|h| h.join().unwrap())
+        .for_each(drop);
+
+    let all_solution_estimated_scores = all_solution_estimated_scores.lock().unwrap();
 
     println!("\nSubmission estimated score:\n");
 
