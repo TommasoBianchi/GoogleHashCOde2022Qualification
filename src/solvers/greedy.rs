@@ -154,7 +154,7 @@ pub fn solve(
         // Free up contributors
         let contributors_ids_to_free = contributors_ids_to_freeup_time
             .iter()
-            .filter(|entry| *entry.1 >= current_time)
+            .filter(|entry| *entry.1 <= current_time)
             .map(|entry| entry.0)
             .cloned()
             .collect::<Vec<_>>();
