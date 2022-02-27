@@ -26,7 +26,14 @@ pub fn solve(
 
     let mut current_contributors: Vec<Contributor> = input.contributors.to_vec();
 
-    while !available_projects_ids.is_empty() {
+    let latest_time = input
+        .projects
+        .iter()
+        .map(|p| p.best_before + p.score)
+        .max()
+        .unwrap_or(0);
+
+    while !available_projects_ids.is_empty() && current_time < latest_time {
         // Cleanup projects no longer doable (i.e., with a score of zero)
         for project_id in available_projects_ids.iter().cloned().collect::<Vec<_>>() {
             let project = &input.projects[project_id];
@@ -121,11 +128,12 @@ pub fn solve(
         }
 
         println!(
-            "[{}] Assigned projects = {} this round, {} total; next time = {}; remaining projects = {}; estimated score = {} (+{} this round)",
+            "[{}] Assigned projects = {} this round, {} total; next time = {}/{}; remaining projects = {}; estimated score = {} (+{} this round)",
             dataset_name,
             assigned_projects,
             executed_projects.len(),
             current_time,
+            latest_time,
             available_projects_ids.len(),
             estimated_score,
             round_estimated_score
