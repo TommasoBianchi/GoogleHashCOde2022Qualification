@@ -277,6 +277,7 @@ fn sort_projects<TIter: Iterator<Item = usize>>(
         .collect::<Vec<_>>()
 }
 
+#[allow(dead_code)]
 fn find_best_project(
     input: &InputData,
     current_time: u32,
