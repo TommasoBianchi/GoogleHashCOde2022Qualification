@@ -20,6 +20,7 @@ pub fn solve(
     let mut current_time = 0_u32;
     let mut next_current_time = 0_u32;
     let mut rounds_without_improvements = 0_u32;
+    let mut estimated_score = 0_u32;
 
     let mut executed_projects = vec![];
 
@@ -27,6 +28,8 @@ pub fn solve(
 
     while !available_projects_ids.is_empty() {
         println!("Remaining projects = {}", available_projects_ids.len());
+
+        let mut round_estimated_score = 0_u32;
 
         // Sort projects by score
         let sorted_projects =
@@ -82,6 +85,9 @@ pub fn solve(
 
             assigned_projects += 1;
 
+            let project_score = score_project(current_time, project);
+            round_estimated_score += project_score;
+
             // Save results
             executed_projects.push(ExecutedProject {
                 project,
@@ -95,6 +101,8 @@ pub fn solve(
             available_projects_ids.remove(&project_id);
         }
 
+        estimated_score += round_estimated_score;
+
         current_time = next_current_time.max(current_time + 1);
 
         if assigned_projects > 0 {
@@ -104,12 +112,14 @@ pub fn solve(
         }
 
         println!(
-            "[{}] Assigned projects = {} this round, {} total; next time = {}; remaining projects = {}",
+            "[{}] Assigned projects = {} this round, {} total; next time = {}; remaining projects = {}; estimated score = {} (+{} this round)",
             dataset_name,
             assigned_projects,
             executed_projects.len(),
             current_time,
-            available_projects_ids.len()
+            available_projects_ids.len(),
+            estimated_score,
+            round_estimated_score
         );
 
         if rounds_without_improvements > max_rounds_without_improvements {
@@ -141,7 +151,10 @@ pub fn solve(
         }
     }
 
-    Ok(Solution { executed_projects })
+    Ok(Solution {
+        executed_projects,
+        estimated_score,
+    })
 }
 
 fn assign_contributors(
@@ -236,7 +249,7 @@ fn sort_projects<TIter: Iterator<Item = usize>>(
         .map(|project_id| {
             (
                 project_id,
-                score_project(current_time, &input.projects[project_id]),
+                evaluate_project(current_time, &input.projects[project_id]),
             )
         })
         .collect::<Vec<_>>();
@@ -262,7 +275,7 @@ fn find_best_project(
     let mut current_score = f32::MIN;
 
     for project_id in available_projects_ids.iter() {
-        let score = score_project(current_time, &input.projects[*project_id]);
+        let score = evaluate_project(current_time, &input.projects[*project_id]);
 
         if score > current_score {
             current_score = score;
@@ -273,15 +286,20 @@ fn find_best_project(
     Some(current_best)
 }
 
-fn score_project(current_time: u32, project: &Project) -> f32 {
-    let extra_time = current_time as i32 + project.duration as i32 - project.best_before as i32;
-    let score = if extra_time <= 0 {
-        project.score as f32
-    } else if extra_time as u32 >= project.duration {
-        0.0
-    } else {
-        project.score as f32 - extra_time as f32
-    };
+fn evaluate_project(current_time: u32, project: &Project) -> f32 {
+    score_project(current_time, project) as f32
+        / project.duration as f32
+        / project.roles.len() as f32
+}
 
-    score / project.duration as f32 / project.roles.len() as f32
+fn score_project(current_time: u32, project: &Project) -> u32 {
+    let extra_time = current_time as i32 + project.duration as i32 - project.best_before as i32;
+
+    if extra_time <= 0 {
+        project.score
+    } else if extra_time as u32 >= project.duration {
+        0
+    } else {
+        project.score - extra_time as u32
+    }
 }
