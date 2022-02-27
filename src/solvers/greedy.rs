@@ -27,6 +27,15 @@ pub fn solve(
     let mut current_contributors: Vec<Contributor> = input.contributors.to_vec();
 
     while !available_projects_ids.is_empty() {
+        // Cleanup projects no longer doable (i.e., with a score of zero)
+        for project_id in available_projects_ids.iter().cloned().collect::<Vec<_>>() {
+            let project = &input.projects[project_id];
+            let score = score_project(current_time, project);
+            if score == 0 {
+                available_projects_ids.remove(&project_id);
+            }
+        }
+
         println!("Remaining projects = {}", available_projects_ids.len());
 
         let mut round_estimated_score = 0_u32;
@@ -140,14 +149,6 @@ pub fn solve(
         for contributor_id in contributors_ids_to_free.iter() {
             contributors_ids_to_freeup_time.remove(contributor_id);
             available_contributors_ids.insert(*contributor_id);
-        }
-
-        // Cleanup projects no longer doable
-        for project_id in available_projects_ids.iter().cloned().collect::<Vec<_>>() {
-            let project = &input.projects[project_id];
-            if current_time >= project.best_before + project.score {
-                available_projects_ids.remove(&project_id);
-            }
         }
     }
 
