@@ -102,6 +102,12 @@ pub fn solve(
             assigned_projects += 1;
 
             let project_score = score_project(current_time, project);
+            if project_score == 0 {
+                println!(
+                    "Current time = {}/{}, best before = {}, duration = {}, score = {}",
+                    current_time, latest_time, project.best_before, project.duration, project.score
+                );
+            }
             round_estimated_score += project_score;
 
             // Save results
