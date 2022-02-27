@@ -43,8 +43,6 @@ pub fn solve(
             }
         }
 
-        println!("Remaining projects = {}", available_projects_ids.len());
-
         let mut round_estimated_score = 0_u32;
 
         // Sort projects by score
