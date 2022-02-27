@@ -297,7 +297,7 @@ fn score_project(current_time: u32, project: &Project) -> u32 {
 
     if extra_time <= 0 {
         project.score
-    } else if extra_time as u32 >= project.duration {
+    } else if extra_time as u32 >= project.score {
         0
     } else {
         project.score - extra_time as u32
