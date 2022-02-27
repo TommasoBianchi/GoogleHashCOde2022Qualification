@@ -1,4 +1,4 @@
-use std::{fs::File, io::Write};
+use std::{collections::HashMap, fs::File, io::Write, ops::Add};
 
 use parse_input::parse_input;
 
@@ -22,6 +22,8 @@ fn main() {
     ];
     let submissions_dir = "submissions/5/";
 
+    let mut all_solution_estimated_scores = HashMap::new();
+
     for filename in input_filenames {
         println!("Input file = {}", filename);
 
@@ -33,5 +35,27 @@ fn main() {
             .unwrap()
             .write_fmt(format_args!("{}", solution))
             .unwrap();
+
+        all_solution_estimated_scores.insert(filename, solution.estimated_score);
     }
+
+    println!("\nSubmission estimated score:\n");
+
+    println!(
+        "{}",
+        all_solution_estimated_scores
+            .iter()
+            .map(|entry| format!("{} = {}\n", entry.0, entry.1))
+            .reduce(|s1, s2| s1 + &s2)
+            .unwrap_or_else(|| String::from("No solutions"))
+    );
+
+    println!(
+        "Total estimated score = {}",
+        all_solution_estimated_scores
+            .values()
+            .cloned()
+            .reduce(|a, b| a + b)
+            .unwrap_or(0)
+    )
 }
