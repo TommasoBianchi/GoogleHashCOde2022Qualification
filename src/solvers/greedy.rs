@@ -18,7 +18,6 @@ pub fn solve(
         (0..input.contributors.len()).into_iter().collect();
     let mut contributors_ids_to_freeup_time: HashMap<usize, u32> = HashMap::new();
     let mut current_time = 0_u32;
-    let mut next_current_time = 0_u32;
     let mut rounds_without_improvements = 0_u32;
     let mut estimated_score = 0_u32;
 
@@ -60,13 +59,6 @@ pub fn solve(
 
             if contributors_option.is_none() {
                 continue;
-            }
-
-            // Update next current time
-            if next_current_time == current_time {
-                next_current_time += project.duration;
-            } else {
-                next_current_time = next_current_time.min(current_time + project.duration);
             }
 
             let contributors_ids = contributors_option.unwrap();
@@ -123,7 +115,12 @@ pub fn solve(
 
         estimated_score += round_estimated_score;
 
-        current_time = next_current_time.max(current_time + 1);
+        let first_freeup_time = contributors_ids_to_freeup_time
+            .values()
+            .min()
+            .copied()
+            .unwrap_or(current_time + 1);
+        current_time = first_freeup_time;
 
         if assigned_projects > 0 {
             rounds_without_improvements = 0;
